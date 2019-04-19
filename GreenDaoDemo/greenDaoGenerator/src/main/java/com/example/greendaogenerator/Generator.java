@@ -9,7 +9,6 @@ public class Generator {
 
         Schema schema = new Schema(1,"com.example.greendaodemo.db");
         schema.enableKeepSectionsByDefault();
-
         addTables(schema);
 
         try {

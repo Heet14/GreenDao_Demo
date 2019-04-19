@@ -1,97 +1,82 @@
 package com.example.greendaodemo;
 
-import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.view.View;
-import android.widget.ArrayAdapter;
+import android.os.Bundle;import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
-import com.example.greendaodemo.db.DaoSession;
 import com.example.greendaodemo.db.User;
-import com.example.greendaodemo.db.UserDao;
-
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
+
 public class MainActivity extends AppCompatActivity {
 
+    @BindView(R.id.aMain_edtFirstName)
+    EditText mEdtFirstName;
+    @BindView(R.id.aMain_edtLastName)
+    EditText mEdtLastName;
+    @BindView(R.id.aMain_btnInsert)
+    Button mBtnInsert;
+    @BindView(R.id.aMain_btnShow)
+    Button mBtnShow;
+    @BindView(R.id.aMain_btnDelete)
+    Button mBtnDelete;
+    @BindView(R.id.aMain_rv)
     RecyclerView mRecyclerView;
-    private RecyclerView.Adapter mAdapter;
-    private RecyclerView.LayoutManager layoutManager;
 
-    DaoSession mDaoSession;
+    private MyAdapter mAdapter;
+    private RecyclerView.LayoutManager mLayoutManager;
+    private DataBaseManager mDatabaseInstance;
+
     List<User> mUserList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        ButterKnife.bind(this);
 
-        mDaoSession = ((AppController) getApplication()).getDaoSession();
-        bindViews();
-
-
+        mDatabaseInstance = new DataBaseManager();
+        bindRecyclerViews();
     }
 
-    private void bindViews() {
-        mRecyclerView = (RecyclerView)findViewById(R.id.aMain_rv);
+    private void bindRecyclerViews() {
         // in content do not change the layout size of the RecyclerView
         mRecyclerView.setHasFixedSize(true);
-
         // use a linear layout manager
-        layoutManager = new LinearLayoutManager(this);
-        mRecyclerView.setLayoutManager(layoutManager);
-        // specify an adapter (see also next example)
-        mAdapter = new MyAdapter(mUserList);
+        mLayoutManager = new LinearLayoutManager(this);
+        mRecyclerView.setLayoutManager(mLayoutManager);
+        mAdapter = new MyAdapter();
         mRecyclerView.setAdapter(mAdapter);
     }
 
 
-    private void fetchUserList(){
-        mUserList.clear();
-        //// Get the entity dao we need to work with.
-        UserDao UserDao = mDaoSession.getUserDao();
-
-        //// Load all items
-        mUserList.addAll(UserDao.loadAll());
-
-        /// Notify our adapter of changes
-        mAdapter.notifyDataSetChanged();
+    @OnClick({R.id.aMain_btnInsert, R.id.aMain_btnShow, R.id.aMain_btnDelete})
+    public void onViewClicked(View view) {
+        switch (view.getId()) {
+            case R.id.aMain_btnInsert:
+                mDatabaseInstance.insetIntoDB(mEdtFirstName.getText().toString(), mEdtLastName.getText().toString());
+                Toast.makeText(this,"Inserted",Toast.LENGTH_LONG);
+                break;
+            case R.id.aMain_btnShow:
+                showUsersList();
+                break;
+            case R.id.aMain_btnDelete:
+                mDatabaseInstance.deleteUserFromDB();
+                showUsersList();
+                break;
+        }
     }
 
-
-    private void deleteUserItem(long id){
-        //// Get the entity dao we need to work with.
-        UserDao UserDao = mDaoSession.getUserDao();
-        /// perform delete operation
-        UserDao.deleteByKey(id);
-
-        fetchUserList();
+    private void showUsersList() {
+        mUserList = mDatabaseInstance.fetchUserListFromDB();
+        mAdapter.addList(mUserList);
     }
-
-/*
-    private void updateItem(long id,String aFirstName){
-        UserDao UserDao = mDaoSession.getUserDao();
-        User user = new User();
-        user.setId(id);
-        user.setFirst_name(UserDao);
-
-        UserDao.saveInTx(user);
-        Toast.makeText(this, "Item updated", Toast.LENGTH_SHORT).show();
-        finish();
-    }*/
-
-    private void insetItem(long aId,String aFname,String aLastName){
-        UserDao UserDao = mDaoSession.getUserDao();
-        User user = new User();
-        user.setId(aId);
-        user.setFirst_name(aFname);
-        user.setLast_name(aLastName);
-        user.setEmail("gmail.com");
-        UserDao.insert(user);
-        Toast.makeText(this, "Item inserted", Toast.LENGTH_SHORT).show();
-      }
 }
